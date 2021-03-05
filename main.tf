@@ -10,8 +10,6 @@ data "external" "rebrain_key_fingerprint" {
   program = ["bash", "calculate-fingerprint.sh"]
   }
 
-
-
 # Create a web server in Frankfurt region
 resource "digitalocean_droplet" "web" {
   image    = "ubuntu-20-04-x64"
