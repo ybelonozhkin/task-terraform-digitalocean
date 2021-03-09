@@ -4,20 +4,20 @@ resource "digitalocean_ssh_key" "info_at_nightsochi_ru_key" {
   public_key = file("~/.ssh/id_rsa.pub")
 }
 
-# Calculate fingerprint from existing Rebrain public key
-# TO-DO: put this calculation to variables.tf for clarity?
-data "external" "rebrain_key_fingerprint" {
-  program = ["bash", "calculate-fingerprint.sh"]
+# Define data source to get existing SSH key
+# Key name is known beforehand
+data "digitalocean_ssh_key" "rebrain" {
+  name = "REBRAIN.SSH.PUB.KEY"
 }
 
 # Create a web server in Frankfurt region
 resource "digitalocean_droplet" "web" {
-  image    = "ubuntu-20-04-x64"
-  name     = "TF-04-server"
-  region   = "fra1"
-  size     = "s-1vcpu-2gb"
-  tags     = ["devops", "info_at_nightsochi_ru"]
-  ssh_keys = [data.external.rebrain_key_fingerprint.result.fingerprint, digitalocean_ssh_key.info_at_nightsochi_ru_key.fingerprint]
+  image  = "ubuntu-20-04-x64"
+  name   = "TF-04-server"
+  region = "fra1"
+  size   = "s-1vcpu-2gb"
+  tags   = ["devops", "info_at_nightsochi_ru"]
+  ssh_keys = [data.digitalocean_ssh_key.rebrain.id, digitalocean_ssh_key.info_at_nightsochi_ru_key.fingerprint]
 }
 
 # Place IPv4 adress of the created droplet in the variable
