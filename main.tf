@@ -1,4 +1,4 @@
-# Create a new SSH key
+# Create a new SSH key using existing SSH key from local machine
 resource "digitalocean_ssh_key" "info_at_nightsochi_ru_key" {
   name       = "Key for info_at_nightsochi_ru access"
   public_key = file("~/.ssh/id_rsa.pub")
@@ -20,14 +20,20 @@ resource "digitalocean_droplet" "web" {
   ssh_keys = [data.external.rebrain_key_fingerprint.result.fingerprint, digitalocean_ssh_key.info_at_nightsochi_ru_key.fingerprint]
 }
 
-# IPv4 adress of the created droplet
+# Place IPv4 adress of the created droplet in the variable
 locals {
   do_ipv4 = digitalocean_droplet.web.ipv4_address
 }
 
+# Define data source to get existing Route53 zone_id
+# Zone is known beforehand (devops.rebrain.srwx.net)
+data "aws_route53_zone" "rebrain" {
+  name = "devops.rebrain.srwx.net"
+}
+
 # Create DNS record
 resource "aws_route53_record" "www" {
-  zone_id = "ZCOKAAJ9UMS0T"
+  zone_id = data.aws_route53_zone.rebrain.zone_id # zone id form data source
   name    = "ybelonozhkin.devops.rebrain.srwx.net"
   type    = "A"
   ttl     = "300"
