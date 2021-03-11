@@ -33,8 +33,8 @@ data "aws_route53_zone" "rebrain" {
 
 # Create DNS record
 resource "aws_route53_record" "www" {
-  zone_id = data.aws_route53_zone.rebrain.zone_id # zone id form data source
-  name    = "ybelonozhkin.devops.rebrain.srwx.net"
+  zone_id = data.aws_route53_zone.rebrain.zone_id # zone id from data source
+  name    = "ybelonozhkin"
   type    = "A"
   ttl     = "300"
   records = [local.do_ipv4]
