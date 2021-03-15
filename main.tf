@@ -12,17 +12,13 @@ data "digitalocean_ssh_key" "rebrain" {
 
 # Create a web server in Frankfurt region
 resource "digitalocean_droplet" "web" {
-  image  = "ubuntu-20-04-x64"
-  name   = "TF-04-server"
-  region = "fra1"
-  size   = "s-1vcpu-2gb"
-  tags   = ["devops", "info_at_nightsochi_ru"]
+  count    = var.droplet_count
+  image    = "ubuntu-20-04-x64"
+  name     = "TF-04-server-${count.index + 1}"
+  region   = "fra1"
+  size     = "s-1vcpu-2gb"
+  tags     = ["devops", "info_at_nightsochi_ru"]
   ssh_keys = [data.digitalocean_ssh_key.rebrain.id, digitalocean_ssh_key.info_at_nightsochi_ru_key.fingerprint]
-}
-
-# Place IPv4 adress of the created droplet in the variable
-locals {
-  do_ipv4 = digitalocean_droplet.web.ipv4_address
 }
 
 # Define data source to get existing Route53 zone_id
@@ -33,9 +29,10 @@ data "aws_route53_zone" "rebrain" {
 
 # Create DNS record
 resource "aws_route53_record" "www" {
+  count   = var.droplet_count
+  records = [digitalocean_droplet.web[count.index].ipv4_address]
   zone_id = data.aws_route53_zone.rebrain.zone_id # zone id from data source
-  name    = "ybelonozhkin"
+  name    = "ybelonozhkin-${count.index + 1}"
   type    = "A"
   ttl     = "300"
-  records = [local.do_ipv4]
 }

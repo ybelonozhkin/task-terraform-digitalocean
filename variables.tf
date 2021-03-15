@@ -16,3 +16,9 @@ variable "aws_secret_key" {
   type        = string
   description = "AWS Secret Key"
 }
+
+variable "droplet_count" {
+  type        = number
+  description = "DO droplet count"
+  default     = 3
+}
