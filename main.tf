@@ -10,6 +10,13 @@ data "digitalocean_ssh_key" "rebrain" {
   name = "REBRAIN.SSH.PUB.KEY"
 }
 
+# Define random password resource
+resource "random_password" "droplet_password" {
+  count = var.droplet_count
+  length  = 10
+  special = true
+}
+
 # Create a web server in Frankfurt region
 resource "digitalocean_droplet" "web" {
   count    = var.droplet_count
@@ -28,9 +35,14 @@ resource "digitalocean_droplet" "web" {
     }
     inline = [
       "useradd ${var.do_user}",
-      "echo ${var.do_user}:${var.do_password} | chpasswd"
+      "echo ${var.do_user}:\"${random_password.droplet_password[count.index].result}\" | chpasswd"
     ]
   }
+}
+
+# Show generated password(s) for debug/educational purposes
+output "droplet_password" {
+  value = random_password.droplet_password[*].result
 }
 
 # Define data source to get existing Route53 zone_id
