@@ -19,6 +19,18 @@ resource "digitalocean_droplet" "web" {
   size     = "s-1vcpu-2gb"
   tags     = ["devops", "info_at_nightsochi_ru"]
   ssh_keys = [data.digitalocean_ssh_key.rebrain.id, digitalocean_ssh_key.info_at_nightsochi_ru_key.fingerprint]
+  provisioner "remote-exec" {
+    connection {
+      type  = "ssh"
+      user  = "root"
+      host  = self.ipv4_address
+      agent = true
+    }
+    inline = [
+      "useradd ${var.do_user}",
+      "echo ${var.do_user}:${var.do_password} | chpasswd"
+    ]
+  }
 }
 
 # Define data source to get existing Route53 zone_id
