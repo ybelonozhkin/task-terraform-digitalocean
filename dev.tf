@@ -1,7 +1,8 @@
+# Describe users and their machines
 variable "devs" {
   type = map(any)
   default = {
-    ybelonozhkin = ["lb", "app1", "app2"],
-    someuser     = ["dbserver", "app-test", "proxy"]
+    ybelonozhkin = ["app", "lb"],
+    speter       = ["dbserver", "storage", "firewall-corp"]
   }
 }

@@ -5,7 +5,7 @@ resource "digitalocean_ssh_key" "info_at_nightsochi_ru_key" {
 }
 
 # Define data source to get existing SSH key
-# Key name is known beforehand
+# SSH key name is known beforehand
 data "digitalocean_ssh_key" "rebrain" {
   name = "REBRAIN.SSH.PUB.KEY"
 }
@@ -18,38 +18,29 @@ data "digitalocean_ssh_key" "rebrain" {
 # 'loginB-prefixB1'
 # 'loginB-prefixB2'
 locals {
-  droplets_list = toset(flatten([
+  droplets = flatten([
     for login, prefixlist in var.devs : [
       for prefix in prefixlist : [
         "${login}-${prefix}"
       ]
     ]
-  ]))
+  ])
+  droplets_list = tolist(local.droplets[*]) # store result as list
+  droplets_set  = toset(local.droplets[*]) # store result as set
 }
-
-# Show created list in console for debug purposes
-output "droplets_list_output" {
-  value = local.droplets_list
-}
-
-# Helpful source:
-# https://medium.com/swlh/terraform-iterating-through-a-map-of-lists-to-define-aws-roles-and-permissions-a6d434182114
 
 # Define random password resource
 resource "random_password" "droplet_password" {
-  #  count   = var.droplet_count
-  for_each = local.droplets_list
+  for_each = local.droplets_set
   length   = 10
   special  = true
 }
 
 # Create a web server in Frankfurt region
 resource "digitalocean_droplet" "web" {
-  #  count    = var.droplet_count
-  for_each = local.droplets_list
+  for_each = local.droplets_set
   name     = each.key
   image    = "ubuntu-20-04-x64"
-  #  name     = "TF-04-server-${count.index + 1}"
   region   = "fra1"
   size     = "s-1vcpu-2gb"
   tags     = ["devops", "info_at_nightsochi_ru"]
@@ -62,16 +53,10 @@ resource "digitalocean_droplet" "web" {
       agent = true
     }
     inline = [
-      # "useradd ${var.do_user}",
       "echo root:\"${random_password.droplet_password[each.key].result}\" | chpasswd"
     ]
   }
 }
-
-# Show generated password(s) for debug purposes
-# output "droplet_password" {
-#  value = random_password.droplet_password[*]
-# }
 
 # Define data source to get existing Route53 zone_id
 # Zone is known beforehand (devops.rebrain.srwx.net)
@@ -81,19 +66,22 @@ data "aws_route53_zone" "rebrain" {
 
 # Create DNS record
 resource "aws_route53_record" "www" {
-  #  count   = var.droplet_count
   for_each = digitalocean_droplet.web
   records  = [digitalocean_droplet.web[each.key].ipv4_address]
-  zone_id  = data.aws_route53_zone.rebrain.zone_id # zone id from data source
-  #  name    = "ybelonozhkin-${count.index + 1}"
+  zone_id  = data.aws_route53_zone.rebrain.zone_id
   name = digitalocean_droplet.web[each.key].name
   type = "A"
   ttl  = "300"
 }
 
-# Generate output file with credentials and IPs
-# resource "local_file" "outputs" {
-#  filename = "${path.module}/output"
-#  content  = templatefile("${path.module}/template.tpl", { port = 8080, ip_addrs = ["10.0.0.1", "10.0.0.2"] })
-#}
+# Generate local file with credentials and IP
+resource "local_file" "outputs" {
+  content = templatefile("${path.module}/template.tpl", {
+    names_list           = local.droplets_list # to iterate
+    droplets_list        = digitalocean_droplet.web
+    route53_records_list = aws_route53_record.www
+    passwords            = random_password.droplet_password
+  })
+  filename = "${path.module}/outputs"
 
+}

@@ -22,13 +22,3 @@ variable "droplet_count" {
   description = "DO droplet count"
   default     = 3
 }
-
-variable "do_user" {
-  type        = string
-  description = "User to create on remote machine"
-}
-
-variable "do_password" {
-  type        = string
-  description = "Desired password for user"
-}
