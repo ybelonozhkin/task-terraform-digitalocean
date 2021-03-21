@@ -49,6 +49,6 @@ After finishing apply action file 'outputs' is created.
 
 ```
 
-## Cresdits
+## Credits
 
 [Yuriy Belonozhkin](https://www.linkedin.com/in/yuriy-belonozhkin/)
